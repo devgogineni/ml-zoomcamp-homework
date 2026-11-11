@@ -1,0 +1,28 @@
+FROM python:3.12-slim
+
+# xgboost's linux wheels need the OpenMP runtime, which the slim image lacks
+# (training.py imports it, and the app imports training.py)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /app
+
+# install dependencies first so this layer is cached until pyproject.toml/uv.lock change
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+# the app reuses engineer_features from training.py and loads the trained model
+COPY training.py ./
+COPY app ./app
+COPY model/linear_regression.bin ./model/linear_regression.bin
+
+RUN useradd --create-home appuser
+USER appuser
+
+EXPOSE 8080
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

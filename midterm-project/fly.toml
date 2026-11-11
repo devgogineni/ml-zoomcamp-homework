@@ -1,0 +1,35 @@
+# fly.toml app configuration file generated for solar-energy-predictor on 2026-11-11T21:43:30Z
+#
+# See https://docs.fly.io/reference/configuration for information about how to use this file.
+#
+
+app = 'solar-energy-predictor'
+primary_region = 'iad'
+
+[build]
+  dockerfile = 'Dockerfile.serve'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+
+  # per-machine cap on simultaneous requests: above the soft limit Fly prefers
+  # other machines, above the hard limit it queues or rejects new requests
+  [http_service.concurrency]
+    type = 'requests'
+    soft_limit = 25
+    hard_limit = 50
+
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '20s'
+    method = 'GET'
+    path = '/health'
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '512mb'
