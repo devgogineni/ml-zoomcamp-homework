@@ -112,15 +112,15 @@ Open http://localhost:8080. `Dockerfile.serve` copies in `training.py`, `app/` a
 
 ## Deploying to Fly.io
 
-The app is deployed at https://solar-energy-predictor.fly.dev/ (app `solar-energy-predictor`, region `iad`).
+The app is deployed at https://solar-energy-predictor.fly.dev/ (app `solar-energy-predictor`, region `lhr`).
 
-`fly.toml` points at `Dockerfile.serve` and exposes port 8080 over HTTPS, with `/health` as the health check. Machines stop when idle and start on the next request, so the first request after a quiet period takes a few seconds. The VM is `shared-cpu-1x` with 512 MB. Fly started two machines for high availability; run `fly scale count 1` if you want one.
+`fly.toml` points at `Dockerfile.serve` and exposes port 8080 over HTTPS, with `/health` as the health check. Machines stop when idle and start on the next request, so the first request after a quiet period takes a few seconds. The VM is `shared-cpu-1x` with 512 MB. The app runs on a single machine in `lhr`. A first deploy creates two machines for high availability unless you pass `--ha=false`, so use `fly deploy --ha=false` when creating machines from scratch.
 
 `fly.toml` also sets a per-machine concurrency limit (soft 25, hard 50 simultaneous requests). Above the soft limit Fly prefers other machines, and above the hard limit it queues or rejects requests. This limits simultaneous load, not requests per client, so it is not per-client rate limiting.
 
 ### First deploy
 1. Install flyctl and log in: `fly auth login`.
-2. Change `app` in `fly.toml` to a name that is unique on Fly.io, and set `primary_region` to one near you.
+2. Change `app` in `fly.toml` to a name that is unique on Fly.io, and set `primary_region` to one near you (it is `lhr`).
 3. Make sure `model/linear_regression.bin` is the model you want to ship (run `training.py`).
 4. Deploy from `midterm-project/`:
    ```bash
